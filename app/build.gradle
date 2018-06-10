@@ -26,4 +26,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile 'org.tensorflow:tensorflow-android:+'
+    // https://mvnrepository.com/artifact/ar.com.hjg/pngj
+    compile group: 'ar.com.hjg', name: 'pngj', version: '2.1.0'
+
 }
