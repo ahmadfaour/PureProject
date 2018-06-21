@@ -9,54 +9,29 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Rect;
-import android.graphics.Typeface;
-import android.media.ImageReader.OnImageAvailableListener;
-import android.os.Bundle;
-import android.os.SystemClock;
 import android.util.DisplayMetrics;
-import android.util.Size;
-import android.util.TypedValue;
-import android.view.Display;
-import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
-import org.tensorflow.demo.OverlayView.DrawCallback;
-import org.tensorflow.demo.env.BorderedText;
-import org.tensorflow.demo.env.ImageUtils;
-import org.tensorflow.demo.env.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Vector;
-
-import static android.app.Activity.RESULT_OK;
-import static android.content.Context.UI_MODE_SERVICE;
-import static org.tensorflow.demo.GlobalVariables.getStyleVals;
-import static org.tensorflow.demo.GlobalVariables.styleVals;
 
 public class StylesActivity extends AppCompatActivity {
-    private static final Logger LOGGER = new Logger();
     //Sliders
     private ImageGridAdapter adapter;
     private GridView grid;
@@ -184,7 +159,7 @@ public class StylesActivity extends AppCompatActivity {
             final InputStream inputStream = assetManager.open(filePath);
             bitmap = BitmapFactory.decodeStream(inputStream);
         } catch (final IOException e) {
-            LOGGER.e("Error opening bitmap!", e);
+            e.printStackTrace();
         }
 
         return bitmap;
@@ -255,7 +230,7 @@ public class StylesActivity extends AppCompatActivity {
         {
 
             for (int i = 0; i < GlobalVariables.getNumStyles(); ++i) {
-                LOGGER.v("Creating item %d", i);
+
 
                 if (items[i] == null) {
                     final StylesActivity.ImageSlider slider = new StylesActivity.ImageSlider(StylesActivity.this);

@@ -1,86 +1,49 @@
 package org.tensorflow.demo;
 
 import android.Manifest;
-import android.app.UiModeManager;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.Paint.Style;
 import android.graphics.Rect;
-import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
-import android.media.Image;
-import android.media.ImageReader.OnImageAvailableListener;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.SystemClock;
-import android.renderscript.Allocation;
-import android.renderscript.Element;
-import android.renderscript.Type;
 import android.support.v7.app.AppCompatActivity;
-import android.util.DisplayMetrics;
-import android.util.Log;
-import android.util.Size;
-import android.util.TypedValue;
-import android.view.Display;
-import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
-import org.tensorflow.demo.env.Logger;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Vector;
 
 import ar.com.hjg.pngj.ImageInfo;
 import ar.com.hjg.pngj.ImageLineByte;
 import ar.com.hjg.pngj.PngWriter;
 
-import static android.app.Activity.RESULT_OK;
-
 public class MainActivity extends AppCompatActivity {
 
-
-    private static final Logger LOGGER = new Logger();
     private static final String MODEL_FILE = "file:///android_asset/stylize_quantized.pb";
     private static final String INPUT_NODE = "input";
     private static final String STYLE_NODE = "style_num";
@@ -105,10 +68,37 @@ public class MainActivity extends AppCompatActivity {
     Uri imageUri;
     private static final int PICK_IMAGE = 100;
     private static final int STYLES = 200;
-    boolean image_picked=false;
+    boolean image_picked = false;
+    ProgressBar progressBar;
+    ProgressBarTask progTask;
+
+
+    private class ProgressBarTask extends AsyncTask<Integer, Integer, Integer> {
+
+        @Override
+        protected void onPreExecute() {
+            //textView.setText("Hello !!!");
+            progressBar.setVisibility(View.VISIBLE);
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Integer doInBackground(Integer... ints) {
+            stylize();
+            return 0;
+        }
+
+
+        @Override
+        protected void onPostExecute(Integer result) {
+            progressBar.setVisibility(View.INVISIBLE);
+        }
+    }
+
 
     /**
      * initialization of the buttons and the imageView;
+     *
      * @param savedInstanceState
      */
     @Override
@@ -133,20 +123,20 @@ public class MainActivity extends AppCompatActivity {
                 openGallery();
             }
         });
-        Button btn = (Button)findViewById(R.id.pick_styles);
+        Button btn = (Button) findViewById(R.id.pick_styles);
 
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(image_picked)
-                    startActivityForResult((new Intent(MainActivity.this , StylesActivity.class)) , STYLES);
+                if (image_picked)
+                    startActivityForResult((new Intent(MainActivity.this, StylesActivity.class)), STYLES);
             }
         });
         Button rotatebutton = (Button) findViewById(R.id.rotate);
         rotatebutton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(image_picked) {
+                if (image_picked) {
                     Bitmap bitmapFromAsset = ((BitmapDrawable) image.getDrawable()).getBitmap();
                     Matrix mat = new Matrix();
                     mat.postRotate(90);
@@ -156,6 +146,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.INVISIBLE);
+
     }
 
     /**
@@ -176,9 +169,9 @@ public class MainActivity extends AppCompatActivity {
      * If the requestcode=100 then we have finished the request of choosing an image from gallery
      * If the requestcode=200 the we have finished the request of selecting styles
      *
-     * @param requestCode   the request we have back from;
-     * @param resultCode    the result of our request;
-     * @param data  the data we get from the request we have done;
+     * @param requestCode the request we have back from;
+     * @param resultCode  the result of our request;
+     * @param data        the data we get from the request we have done;
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -187,11 +180,12 @@ public class MainActivity extends AppCompatActivity {
             //viewing an the image;
             imageUri = data.getData();
             image.setImageURI(imageUri);
-            image_picked=true;
+            image_picked = true;
         }
         if (resultCode == RESULT_OK && requestCode == STYLES) {
             //stylize the photo with the selected filters
-            stylize();
+            progTask = new ProgressBarTask();
+            progTask.execute(0);
         }
     }
 
@@ -205,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
         floatValues = new float[blockSize * blockSize * 3];
 
 
-        String fname = "stylized"+ (cnt++) +".png";
+        String fname = "stylized" + (cnt++) + ".png";
         createNewPNG(fname);
 
         mFile = new File(root + File.separator + fname);
@@ -218,6 +212,7 @@ public class MainActivity extends AppCompatActivity {
 
         image.setImageBitmap(result);
     }
+
     private void createNewPNG(String fname) {
         Bitmap newBm = Bitmap.createBitmap(mDecoder.getWidth(), mDecoder.getHeight(), Config.ARGB_8888);
         File myDir = new File(root);
@@ -234,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
     private void createDecoder() {
 //        InputStream is = null;
         try {
@@ -247,6 +243,7 @@ public class MainActivity extends AppCompatActivity {
             throw new RuntimeException("Could not create BitmapRegionDecoder", e);
         }
     }
+
     private void divideAndStylize(int bmWidth, int bmHeight) {
         int y = 0;
         while (y < bmHeight && y + blockSize <= bmHeight) {
@@ -283,6 +280,7 @@ public class MainActivity extends AppCompatActivity {
         }
         pngw.end();
     }
+
     private void writeToPNG(int rows) {
         for (int i = 0; i < rows; i++) {
             Bitmap bmp = Bitmap.createBitmap(res_bitmap, 0, i, mDecoder.getWidth(), 1);
@@ -314,6 +312,7 @@ public class MainActivity extends AppCompatActivity {
             bmp.recycle();
         }
     }
+
     private void handleBottomCorner(int bmWidth, int bmHeight, int x, int y) {
         int height1 = bmHeight - y;
         int width1 = bmWidth - x; //width from x to last
@@ -354,6 +353,7 @@ public class MainActivity extends AppCompatActivity {
         canvas.drawBitmap(newBlock, x, y_overlay, null);
 
     }
+
     private void handleLastVerticalBlock(int bmWidth, int bmHeight, int y) {
         int height1 = bmHeight - y; //width from x to last
         int block_size = blockSize;
@@ -409,6 +409,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
     private void handleLastHorizontalBlock(int bmWidth, int x, int y) {
         int width1 = bmWidth - x; //width from x to last
         int block_size = blockSize;
@@ -452,6 +453,7 @@ public class MainActivity extends AppCompatActivity {
             canvas.drawBitmap(newBlock, x, cut_overlay, null);
         }
     }
+
     private void mergeOverlap(Bitmap stylizedBlock, int x, int y) {
         if (x == 0 && y == 0) {
             return;
@@ -488,6 +490,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
+
     private void drawNewBlock(Bitmap stylizedBlock, int x, int y) {
         int width_tmp = 0, height_tmp = 0;
         int x_tmp = 0, y_tmp = 0;
@@ -519,6 +522,7 @@ public class MainActivity extends AppCompatActivity {
         Bitmap crop_stylizedBlock = Bitmap.createBitmap(stylizedBlock, x_tmp, y_tmp, width_tmp, height_tmp);
         canvas.drawBitmap(crop_stylizedBlock, x + x_tmp, y_tmp, null);
     }
+
     static void getFloatVals(Bitmap bm, float[] floatVals) {
         int[] pixels = new int[bm.getWidth() * bm.getHeight()];
         bm.getPixels(pixels, 0, bm.getWidth(), 0, 0, bm.getWidth(), bm.getHeight());
@@ -529,6 +533,7 @@ public class MainActivity extends AppCompatActivity {
             floatVals[i * 3 + 2] = (val & 0xFF) / 255.0f;
         }
     }
+
     private Bitmap verticalMerge(Bitmap prev_bm, Bitmap new_bm) {
         int width = prev_bm.getWidth();
         int height = prev_bm.getHeight();
@@ -556,6 +561,7 @@ public class MainActivity extends AppCompatActivity {
         }
         return (Bitmap.createBitmap(new_intVals, width, height, Config.ARGB_8888));
     }
+
     private Bitmap horizontalMerge(Bitmap prev_bm, Bitmap new_bm) {
         int width = prev_bm.getWidth();
         int height = prev_bm.getHeight();
@@ -582,6 +588,7 @@ public class MainActivity extends AppCompatActivity {
         }
         return (Bitmap.createBitmap(new_intVals, width, height, Config.ARGB_8888));
     }
+
     private Bitmap diagonalMerge(Bitmap prev_bm, Bitmap new_bm) {
         int width = prev_bm.getWidth();
         int height = prev_bm.getHeight();
@@ -617,6 +624,7 @@ public class MainActivity extends AppCompatActivity {
         return (Bitmap.createBitmap(new_intVals, width, height, Config.ARGB_8888));
 
     }
+
     private void stylizeImage(Bitmap bitmap) {
         bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
         for (int i = 0; i < intValues.length; ++i) {
@@ -641,6 +649,7 @@ public class MainActivity extends AppCompatActivity {
                             | ((int) (floatValues[i * 3 + 2] * 255));
         }
     }
+
     private void requestPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (shouldShowRequestPermissionRationale(PERMISSION_STORAGE)) {
@@ -650,6 +659,7 @@ public class MainActivity extends AppCompatActivity {
             requestPermissions(new String[]{PERMISSION_STORAGE}, PERMISSIONS_REQUEST);
         }
     }
+
     private boolean hasPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return checkSelfPermission(PERMISSION_STORAGE) == PackageManager.PERMISSION_GRANTED;
