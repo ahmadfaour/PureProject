@@ -2,5 +2,15 @@
     <string name="app_name">PureProject</string>
     <string name="description_info">Info</string>
     <string name="request_permission">This sample needs camera permission.</string>
-    <string name="camera_error">This device doesn\'t support Camera2 API.</string>
+    <!--<string name="camera_error">This device doesn\'t support Camera2 API.</string>-->
+    <string name="select_an_image">Select An Image</string>
+    <string name="style">style</string>
+    <string name="todo">TODO</string>
+
+    <string name="title_activity_styles">StylesActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="title_activity_login">Sign in</string>
+    <string name="done">Done</string>
+
 </resources>
