@@ -8,6 +8,7 @@ import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
@@ -132,8 +133,9 @@ public class MainActivity extends AppCompatActivity {
                     startActivityForResult((new Intent(MainActivity.this, StylesActivity.class)), STYLES);
             }
         });
-        Button rotatebutton = (Button) findViewById(R.id.rotate);
-        rotatebutton.setOnClickListener(new OnClickListener() {
+
+        Button rotate_button = (Button) findViewById(R.id.rotate);
+        rotate_button.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (image_picked) {
@@ -148,6 +150,9 @@ public class MainActivity extends AppCompatActivity {
         });
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         progressBar.setVisibility(View.INVISIBLE);
+        btn.setTextColor(Color.parseColor("#ffffffff"));
+        pickImageButton.setTextColor(Color.parseColor("#ffffffff"));
+        rotate_button.setTextColor(Color.parseColor("#ffffffff"));
 
     }
 
@@ -243,6 +248,7 @@ public class MainActivity extends AppCompatActivity {
             throw new RuntimeException("Could not create BitmapRegionDecoder", e);
         }
     }
+
 
     private void divideAndStylize(int bmWidth, int bmHeight) {
         int y = 0;

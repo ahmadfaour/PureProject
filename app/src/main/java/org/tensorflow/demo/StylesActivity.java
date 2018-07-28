@@ -48,7 +48,9 @@ public class StylesActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_styles);
+
         Button btn = (Button)findViewById(R.id.done);
+        btn.setTextColor(Color.parseColor("#ffffffff"));
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -84,14 +86,13 @@ public class StylesActivity extends AppCompatActivity {
             RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(styleSelectorWidth, ViewGroup.LayoutParams.MATCH_PARENT);
 
             // Calculate number of style in a row, so all the style can show up without scrolling
-            int numOfStylePerRow = 3;
+            int numOfStylePerRow = 5;
             while (styleSelectorWidth / numOfStylePerRow * Math.ceil((float) (adapter.getCount() - 2) / numOfStylePerRow) > styleSelectorHeight) {
                 numOfStylePerRow++;
             }
             grid.setNumColumns(numOfStylePerRow);
             layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             grid.setLayoutParams(layoutParams);
-
         }
     }
 

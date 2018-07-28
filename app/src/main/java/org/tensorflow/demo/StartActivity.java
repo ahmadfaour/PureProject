@@ -3,6 +3,7 @@ package org.tensorflow.demo;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -41,5 +42,6 @@ public class StartActivity extends AppCompatActivity {
                 startActivity(new Intent(StartActivity.this , MainActivity.class));
             }
         });
+        next.setTextColor(Color.parseColor("#ffffffff"));
     }
 }
